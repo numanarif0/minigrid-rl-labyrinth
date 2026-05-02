@@ -11,7 +11,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 
 
 
-env = DummyVecEnv([MakeEnv("MiniGrid-LavaCrossingS5N1-v0") for _ in range(4)])
+env = DummyVecEnv([MakeEnv("MiniGrid-LavaCrossingS9N1-v0") for _ in range(4)])
 
 #lr_schedule = lambda progress: 1e-4 * progress
 
@@ -19,7 +19,7 @@ env = DummyVecEnv([MakeEnv("MiniGrid-LavaCrossingS5N1-v0") for _ in range(4)])
 model = PPO(policy="MlpPolicy",env=env,learning_rate=3e-4,n_steps=4096,
             batch_size=128,n_epochs=15,gamma=0.995,ent_coef=0.05,verbose=1)
 
-eval_env = DummyVecEnv([MakeEnv("MiniGrid-LavaCrossingS5N1-v0") ])
+eval_env = DummyVecEnv([MakeEnv("MiniGrid-LavaCrossingS9N1-v0" )])
 
 
 evalCallBack = EvalCallback(eval_env=eval_env,best_model_save_path="./best_model/",
