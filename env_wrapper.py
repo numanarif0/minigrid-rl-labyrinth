@@ -28,7 +28,7 @@ class LavaPenaltyWarapper(gym.Wrapper):
             new_distance = self.calculateDistance()
             distance_dif = self.previous_distance - new_distance
             self.previous_distance = new_distance
-            reward = distance_dif * 0.1 - 0.001
+            reward = distance_dif * 0.3 - 0.001
 
         
         return obs , reward , terminated , truncated , info 

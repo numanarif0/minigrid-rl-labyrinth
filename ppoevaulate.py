@@ -7,7 +7,7 @@ from env_wrapper import LavaPenaltyWarapper
 from stable_baselines3.common.vec_env import VecTransposeImage,DummyVecEnv
 
 
-env = DummyVecEnv([MakeEnv("MiniGrid-LavaCrossingS11N5-v0")])
+env = DummyVecEnv([MakeEnv("MiniGrid-FourRooms-v0")])
 env = VecTransposeImage(env)
 
 model = PPO.load("./best_model/2/best_model",env=env)
@@ -24,9 +24,9 @@ for episodes in range(100):
     while not done:
         step+=1
         action , _ = model.predict(obs,deterministic=True)
-        obs, reward , terminated , truncated = env.step(actions=action)
-        done = terminated or truncated
-        total_rewards=total_rewards+reward
+        obs, reward, done, info = env.step(action)
+        done = done[0]
+        total_rewards = total_rewards + reward[0]
 
     rewardsList.append(total_rewards)
     stepsList.append(step)
@@ -62,9 +62,9 @@ for episodes in range(100):
     while not done: 
         steps+=1
         action = [env.action_space.sample()]
-        obs , reward , terminated , truncated = env.step(actions=action)
-        total_rewards=total_rewards+reward
-        done = terminated or truncated
+        obs, reward, done, info = env.step(action)
+        done = done[0]
+        total_rewards = total_rewards + reward[0]
     
     rand_rewardList.append(total_rewards)
     rand_stepList.append(steps)

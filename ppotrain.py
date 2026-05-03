@@ -13,6 +13,11 @@ import torch.nn as nn
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.vec_env import VecTransposeImage
 
+device = th.device("cuda" if th.cuda.is_available() else "cpu")
+print(f"Kullanılan device: {device}")
+if th.cuda.is_available():
+    print(f"CUDA GPU: {th.cuda.get_device_name(0)}")
+    print(f"CUDA Memory: {th.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
 class KucukCNN(BaseFeaturesExtractor):
     def __init__(self, observation_space, features_dim=128):
         super().__init__(observation_space, features_dim)
@@ -60,8 +65,8 @@ env = DummyVecEnv([
 #lr_schedule = lambda progress: 1e-4 * progress
 
 
-model = PPO(policy="CnnPolicy",policy_kwargs=policy_kwargs,env=env,learning_rate=2.5e-4,n_steps=512,
-            batch_size=256,n_epochs=5,gamma=0.995,ent_coef=0.05,verbose=1)
+model = PPO(policy="CnnPolicy",policy_kwargs=policy_kwargs,env=env,learning_rate=2.5e-4,n_steps=1024,
+            batch_size=256,n_epochs=5,gamma=0.995,ent_coef=0.03,verbose=1,device=device)
 
 eval_env = DummyVecEnv([MakeEnv("MiniGrid-LavaCrossingS9N2-v0")])
 eval_env = VecTransposeImage(eval_env)
@@ -72,4 +77,4 @@ eval_env = VecTransposeImage(eval_env)
 evalCallBack = EvalCallback(eval_env=eval_env,best_model_save_path="./best_model/2",
                             eval_freq=10_000,n_eval_episodes=10,verbose=1)
 
-model.learn(total_timesteps=5_000_000,callback=evalCallBack)
+model.learn(total_timesteps=10_000_000,callback=evalCallBack)
