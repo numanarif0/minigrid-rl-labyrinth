@@ -1,6 +1,7 @@
 import gymnasium as gym
 from minigrid.wrappers import FlatObsWrapper 
 from stable_baselines3.common.monitor import Monitor
+from minigrid.wrappers import ImgObsWrapper
 
 class LavaPenaltyWarapper(gym.Wrapper):
     def __init__(self, env):
@@ -33,12 +34,12 @@ class LavaPenaltyWarapper(gym.Wrapper):
         return obs , reward , terminated , truncated , info 
 
     def findTarget(self):
-        for i in range(self.env.unwrapped.grid.height):
-            for j in range(self.env.unwrapped.grid.width):
+        for i in range(self.env.unwrapped.grid.width):
+            for j in range(self.env.unwrapped.grid.height):
                 target = self.env.unwrapped.grid.get(i,j)
                 if target is not None and target.type == "goal":
                     return (i,j)
-
+        return (0,0)
     def calculateDistance(self):
         if self.target_location is None:
             return 0 
@@ -50,7 +51,8 @@ def MakeEnv(env_id):
     def _init():
         env = gym.make(env_id)
         env = LavaPenaltyWarapper(env)
-        env = FlatObsWrapper(env)
+        #env = FlatObsWrapper(env)
+        env = ImgObsWrapper(env)
         env = Monitor(env)
         return env 
     return _init
