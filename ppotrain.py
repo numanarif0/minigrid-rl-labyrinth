@@ -4,14 +4,15 @@ import time
 from minigrid.wrappers import FlatObsWrapper
 import minigrid
 from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.callbacks import EvalCallback
-from env_wrapper import LavaPenaltyWarapper , MakeEnv
+from stable_baselines3.common.callbacks import EvalCallback ,CallbackList
+from env_wrapper import RewardWarapper , MakeEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env import VecNormalize
 import torch as th
 import torch.nn as nn
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.vec_env import VecTransposeImage
+from pathlib import Path
 
 device = th.device("cuda" if th.cuda.is_available() else "cpu")
 print(f"Kullanılan device: {device}")
@@ -20,7 +21,7 @@ if th.cuda.is_available():
     print(f"CUDA Memory: {th.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
 class KucukCNN(BaseFeaturesExtractor):
     def __init__(self, observation_space, features_dim=128):
-        super().__init__(observation_space, features_dim)
+        super().__init__(observation_space, features_dim,)
         
         # Gelen görüntü zaten (3, 7, 7) formatında!
         self.cnn = nn.Sequential(
@@ -50,31 +51,50 @@ class KucukCNN(BaseFeaturesExtractor):
 
 policy_kwargs = dict(
     features_extractor_class=KucukCNN,
-    features_extractor_kwargs=dict(features_dim=128)
+    features_extractor_kwargs=dict(features_dim=128),
+    normalize_images=False,
 )
 
-env = DummyVecEnv([
-    MakeEnv("MiniGrid-LavaCrossingS9N1-v0"),  
-    MakeEnv("MiniGrid-LavaCrossingS9N2-v0"),  
-    MakeEnv("MiniGrid-LavaCrossingS9N3-v0"),  
-    MakeEnv("MiniGrid-LavaCrossingS11N5-v0"), 
-])
 
-#env = VecNormalize(venv=env,norm_obs=True,norm_reward=True)
+env_list = {"MiniGrid-LavaCrossingS9N1-v0",
+            "MiniGrid-LavaCrossingS9N2-v0",
+            "MiniGrid-LavaCrossingS9N3-v0",
+            "MiniGrid-LavaCrossingS11N5-v0",}
 
-#lr_schedule = lambda progress: 1e-4 * progress
+timesteps_list = { 100_000,200_000,300_000,400_000}
 
 
-model = PPO(policy="CnnPolicy",policy_kwargs=policy_kwargs,env=env,learning_rate=2.5e-4,n_steps=1024,
-            batch_size=256,n_epochs=5,gamma=0.995,ent_coef=0.03,verbose=1,device=device)
 
-eval_env = DummyVecEnv([MakeEnv("MiniGrid-LavaCrossingS9N2-v0")])
-eval_env = VecTransposeImage(eval_env)
+def CurriculumLearning(env_list,policy_kwargs,timesteps_list):
 
-#eval_env = VecNormalize(venv=eval_env,norm_obs=True,norm_reward=True)
+    iteration = iter(timesteps_list)
+
+    for env_id in env_list:
+
+        ttl_stps = next(iteration)
+
+        env = DummyVecEnv([MakeEnv(env_id=env_id)])
+        
+        eval_env = DummyVecEnv([MakeEnv(env_id=env_id)])
+        eval_env = VecTransposeImage(eval_env)
 
 
-evalCallBack = EvalCallback(eval_env=eval_env,best_model_save_path="./best_model/2",
-                            eval_freq=10_000,n_eval_episodes=10,verbose=1)
+        best_model = Path(f"./best_model/cirriculum/best_model.zip")
 
-model.learn(total_timesteps=10_000_000,callback=evalCallBack)
+        if best_model.exists():
+            print("The last model is uploding")
+            model = PPO.load(path=best_model,env=env,device="cuda")
+        else: 
+            print("The model is creating")
+            model = PPO(policy="CnnPolicy",policy_kwargs=policy_kwargs,env=env,learning_rate=2.5e-4,n_steps=1024,
+                    batch_size=256,n_epochs=5,gamma=0.995,ent_coef=0.03,verbose=1,device=device)
+
+        eval_callback = EvalCallback(eval_env=eval_env,
+                                     best_model_save_path=f"./best_model/cirriculum/",
+                                     eval_freq=40_000,
+                                     n_eval_episodes=20,verbose=1,deterministic=True)
+        model.learn(total_timesteps=ttl_stps,callback=eval_callback)
+
+
+
+CurriculumLearning(env_list=env_list,policy_kwargs=policy_kwargs,timesteps_list=timesteps_list)
