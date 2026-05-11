@@ -14,6 +14,7 @@ from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.vec_env import VecTransposeImage
 from pathlib import Path
 
+
 device = th.device("cuda" if th.cuda.is_available() else "cpu")
 print(f"Kullanılan device: {device}")
 if th.cuda.is_available():
@@ -83,17 +84,17 @@ def CurriculumLearning(env_list,policy_kwargs,timesteps_list):
 
         if best_model.exists():
             print("The last model is uploding")
-            model = PPO.load(path=best_model,env=env,device="cuda")
+            model = PPO.load(path=best_model,env=env,device="cuda",tensorboard_log="./ppo_tensorboard/")
         else: 
             print("The model is creating")
             model = PPO(policy="CnnPolicy",policy_kwargs=policy_kwargs,env=env,learning_rate=2.5e-4,n_steps=1024,
-                    batch_size=256,n_epochs=5,gamma=0.995,ent_coef=0.03,verbose=1,device=device)
+                    batch_size=256,n_epochs=5,gamma=0.995,ent_coef=0.03,verbose=1,device=device,tensorboard_log="./ppo_tensorboard/")
 
         eval_callback = EvalCallback(eval_env=eval_env,
-                                     best_model_save_path=f"./best_model/cirriculum/",
+                                     best_model_save_path=f"./best_model/cirriculum2/",
                                      eval_freq=40_000,
                                      n_eval_episodes=20,verbose=1,deterministic=True)
-        model.learn(total_timesteps=ttl_stps,callback=eval_callback)
+        model.learn(total_timesteps=ttl_stps,callback=eval_callback,tb_log_name=f"PPO_{env_id}")
 
 
 

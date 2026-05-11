@@ -72,6 +72,8 @@ def bfs_distance(grid, start, goal):
             return d
         for dx, dy in [(0,1),(0,-1),(1,0),(-1,0)]:
             nx, ny = x+dx, y+dy
+            if nx < 0 or nx >= grid.width or ny < 0 or ny >= grid.height:
+                continue
             cell = grid.get(nx, ny)
             if (nx, ny) not in visited and \
             (cell is None or cell.type != 'lava'):
