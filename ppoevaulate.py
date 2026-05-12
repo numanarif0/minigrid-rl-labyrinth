@@ -6,13 +6,29 @@ from env_wrapper import MakeEnv
 from stable_baselines3.common.vec_env import VecTransposeImage, DummyVecEnv
 
 
+def _reset_compat(env):
+    reset_output = env.reset()
+    if isinstance(reset_output, tuple):
+        return reset_output[0]
+    return reset_output
+
+
+def _step_compat(env, action):
+    step_output = env.step(action)
+    if len(step_output) == 5:
+        obs, reward, terminated, truncated, info = step_output
+        done = terminated | truncated
+        return obs, reward, done, info
+    return step_output
+
+
 def evaulateFunction(env, model, env_id, n_episodes=100):
     rewardsList = []
     stepsList = []
     win = 0
 
     for episode in range(n_episodes):
-        obs = env.reset()
+        obs = _reset_compat(env)
         total_rewards = 0
         done = False
         step = 0
@@ -21,12 +37,13 @@ def evaulateFunction(env, model, env_id, n_episodes=100):
         while not done:
             step += 1
             action, _ = model.predict(obs, deterministic=True)
-            obs, reward, done, info = env.step(action)
-            done = done[0]
-            total_rewards += reward[0]
+            obs, reward, done, info = _step_compat(env, action)
+            done = done[0] if isinstance(done, (list, tuple, np.ndarray)) else done
+            total_rewards += reward[0] if isinstance(reward, (list, tuple, np.ndarray)) else reward
 
             if done:
-                is_success = info[0].get('is_success', False)
+                info_item = info[0] if isinstance(info, (list, tuple)) else info
+                is_success = info_item.get('is_success', False)
 
         if is_success:
             win += 1
