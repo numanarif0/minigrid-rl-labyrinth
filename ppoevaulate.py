@@ -17,12 +17,12 @@ def _step_compat(env, action):
     step_output = env.step(action)
     if len(step_output) == 5:
         obs, reward, terminated, truncated, info = step_output
-        done = terminated | truncated
+        done = np.logical_or(terminated, truncated)
         return obs, reward, done, info
     return step_output
 
 
-def evaulateFunction(env, model, env_id, n_episodes=100):
+def evaluateFunction(env, model, env_id, n_episodes=100):
     rewardsList = []
     stepsList = []
     win = 0
@@ -83,7 +83,7 @@ for env_id in env_ids:
     env = DummyVecEnv([MakeEnv(env_id)])
     env = VecTransposeImage(env)
     model = PPO.load("./best_model/2/best_model", env=env)
-    result = evaulateFunction(env=env, model=model, env_id=env_id)
+    result = evaluateFunction(env=env, model=model, env_id=env_id)
     results.append(result)
     env.close()
 
