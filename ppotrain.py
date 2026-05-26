@@ -23,10 +23,10 @@ if th.cuda.is_available():
 class KucukCNN(BaseFeaturesExtractor):
     def __init__(self, observation_space, features_dim=128):
         super().__init__(observation_space, features_dim,)
-        
-        # Gelen görüntü zaten (3, 7, 7) formatında!
+
+        in_channels = observation_space.shape[0]
         self.cnn = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=2, stride=1),
+            nn.Conv2d(in_channels, 16, kernel_size=2, stride=1),
             nn.ReLU(),
             nn.Conv2d(16, 32, kernel_size=2, stride=1),
             nn.ReLU(),
@@ -36,7 +36,6 @@ class KucukCNN(BaseFeaturesExtractor):
         )
         
         with th.no_grad():
-            # observation_space.shape → (3, 7, 7) zaten doğru format
             exmpl = th.zeros(1, *observation_space.shape).float()
             n_flatten = self.cnn(exmpl).shape[1]  # permute yok!
         
@@ -46,7 +45,6 @@ class KucukCNN(BaseFeaturesExtractor):
         )
     
     def forward(self, obs):
-        # permute yok! SB3 zaten halletti
         return self.linear(self.cnn(obs.float()))
 
 
@@ -57,12 +55,16 @@ policy_kwargs = dict(
 )
 
 
-env_list = {"MiniGrid-LavaCrossingS9N1-v0",
-            "MiniGrid-LavaCrossingS9N2-v0",
-            "MiniGrid-LavaCrossingS9N3-v0",
-            "MiniGrid-LavaCrossingS11N5-v0",}
+env_list = [
+    "MiniGrid-LavaCrossingS9N1-v0",
+    "MiniGrid-LavaCrossingS9N2-v0",
+    "MiniGrid-LavaCrossingS9N3-v0",
+    "MiniGrid-LavaCrossingS11N5-v0",
+]
 
-timesteps_list = { 100_000,200_000,300_000,400_000}
+timesteps_list = [100_000, 200_000, 300_000, 400_000]
+
+MODEL_ROOT = Path("./best_model/ppo_runs_cf")
 
 
 
@@ -75,23 +77,25 @@ def CurriculumLearning(env_list,policy_kwargs,timesteps_list):
         ttl_stps = next(iteration)
 
         env = DummyVecEnv([MakeEnv(env_id=env_id)])
+        env = VecTransposeImage(env)
         
         eval_env = DummyVecEnv([MakeEnv(env_id=env_id)])
         eval_env = VecTransposeImage(eval_env)
 
 
-        best_model = Path(f"./best_model/cirriculum/best_model.zip")
+        MODEL_ROOT.mkdir(parents=True, exist_ok=True)
+        best_model = MODEL_ROOT / "best_model.zip"
 
         if best_model.exists():
             print("The last model is uploding")
-            model = PPO.load(path=best_model,env=env,device="cuda",tensorboard_log="./ppo_tensorboard/")
+            model = PPO.load(path=best_model,env=env,device=device,tensorboard_log="./ppo_tensorboard/")
         else: 
             print("The model is creating")
             model = PPO(policy="CnnPolicy",policy_kwargs=policy_kwargs,env=env,learning_rate=2.5e-4,n_steps=1024,
                     batch_size=256,n_epochs=5,gamma=0.995,ent_coef=0.03,verbose=1,device=device,tensorboard_log="./ppo_tensorboard/")
 
         eval_callback = EvalCallback(eval_env=eval_env,
-                                     best_model_save_path=f"./best_model/cirriculum2/",
+                                     best_model_save_path=str(MODEL_ROOT),
                                      eval_freq=40_000,
                                      n_eval_episodes=20,verbose=1,deterministic=True)
         model.learn(total_timesteps=ttl_stps,callback=eval_callback,tb_log_name=f"PPO_{env_id}")

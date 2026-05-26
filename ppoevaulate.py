@@ -1,6 +1,7 @@
 import gymnasium as gym
 import minigrid
 import numpy as np
+from pathlib import Path
 from stable_baselines3 import PPO
 from env_wrapper import MakeEnv
 from stable_baselines3.common.vec_env import VecTransposeImage, DummyVecEnv
@@ -61,11 +62,18 @@ env_ids = [
     "MiniGrid-LavaCrossingS11N5-v0",
 ]
 
+MODEL_ROOT = Path("./best_model/ppo_runs_cf")
+
 results = []
 for env_id in env_ids:
     env = DummyVecEnv([MakeEnv(env_id)])
     env = VecTransposeImage(env)
-    model = PPO.load("./best_model/2/best_model", env=env)
+    model_path = MODEL_ROOT / "best_model.zip"
+    if not model_path.exists():
+        raise FileNotFoundError(
+            f"Model not found: {model_path}. Run ppotrain.py first."
+        )
+    model = PPO.load(model_path, env=env)
     result = evaulateFunction(env=env, model=model, env_id=env_id)
     results.append(result)
     env.close()
