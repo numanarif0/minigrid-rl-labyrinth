@@ -2,9 +2,9 @@ import minigrid  # noqa: F401  # registers MiniGrid environments
 import numpy as np
 from pathlib import Path
 from stable_baselines3 import DQN
-from stable_baselines3.common.vec_env import VecFrameStack, VecTransposeImage, DummyVecEnv
+from stable_baselines3.common.vec_env import VecTransposeImage, DummyVecEnv
 
-from env_wrapper_partial import MakePartialEnv
+from env_wrapper import MakeEnv
 
 
 def evaluate_function(env, model, env_id, n_episodes=100):
@@ -62,18 +62,16 @@ ENV_IDS = [
     "MiniGrid-LavaCrossingS11N5-v0",
 ]
 
-N_STACK = 4
-MODEL_ROOT = Path(f"./best_model/dqn_runs_stack{N_STACK}")
+MODEL_ROOT = Path("./best_model/dqn_runs_cf")
 
 results = []
 for env_id in ENV_IDS:
-    env = DummyVecEnv([MakePartialEnv(env_id)])
+    env = DummyVecEnv([MakeEnv(env_id)])
     env = VecTransposeImage(env)
-    env = VecFrameStack(env, n_stack=N_STACK)
-    model_path = MODEL_ROOT / env_id / "best_model.zip"
+    model_path = MODEL_ROOT / "best_model.zip"
     if not model_path.exists():
         raise FileNotFoundError(
-            f"Model not found for {env_id}: {model_path}. Run dqntrain.py first."
+            f"Model not found: {model_path}. Run dqntrain.py first."
         )
     model = DQN.load(model_path, env=env)
     result = evaluate_function(env=env, model=model, env_id=env_id)

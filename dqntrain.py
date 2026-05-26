@@ -6,9 +6,9 @@ from pathlib import Path
 from stable_baselines3 import DQN
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
-from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack, VecTransposeImage
+from stable_baselines3.common.vec_env import DummyVecEnv, VecTransposeImage
 
-from env_wrapper_partial import MakePartialEnv
+from env_wrapper import MakeEnv
 
 
 device = th.device("cuda" if th.cuda.is_available() else "cpu")
@@ -60,31 +60,30 @@ ENV_IDS = [
     "MiniGrid-LavaCrossingS11N5-v0",
 ]
 
-N_STACK = 4
 TIMESTEPS = [1_000_000, 1_500_000, 2_000_000, 2_500_000]
 
-MODEL_ROOT = Path(f"./best_model/dqn_runs_stack{N_STACK}")
+MODEL_ROOT = Path("./best_model/dqn_runs_cf")
 
 
 def train_curriculum(env_ids, timesteps):
     MODEL_ROOT.mkdir(parents=True, exist_ok=True)
-    for env_id, total_steps in zip(env_ids, timesteps):
-        env = DummyVecEnv([MakePartialEnv(env_id=env_id)])
+    iteration = iter(timesteps)
+
+    for env_id in env_ids:
+        total_steps = next(iteration)
+
+        env = DummyVecEnv([MakeEnv(env_id=env_id)])
         env = VecTransposeImage(env)
-        env = VecFrameStack(env, n_stack=N_STACK)
 
-        eval_env = DummyVecEnv([MakePartialEnv(env_id=env_id)])
+        eval_env = DummyVecEnv([MakeEnv(env_id=env_id)])
         eval_env = VecTransposeImage(eval_env)
-        eval_env = VecFrameStack(eval_env, n_stack=N_STACK)
 
-        best_model_dir = MODEL_ROOT / env_id
-        best_model_dir.mkdir(parents=True, exist_ok=True)
-        best_model_path = best_model_dir / "best_model.zip"
+        best_model = MODEL_ROOT / "best_model.zip"
 
-        if best_model_path.exists():
+        if best_model.exists():
             print(f"Loading existing model for {env_id}")
             model = DQN.load(
-                path=best_model_path,
+                path=best_model,
                 env=env,
                 device=device,
                 tensorboard_log="./dqn_tensorboard/",
@@ -112,7 +111,7 @@ def train_curriculum(env_ids, timesteps):
 
         eval_callback = EvalCallback(
             eval_env=eval_env,
-            best_model_save_path=str(best_model_dir),
+            best_model_save_path=str(MODEL_ROOT),
             eval_freq=20_000,
             n_eval_episodes=20,
             deterministic=True,
