@@ -64,15 +64,16 @@ ENV_IDS = [
 
 MODEL_ROOT = Path("./best_model/dqn_runs_cf")
 
+model_path = MODEL_ROOT / "best_model.zip"
+if not model_path.exists():
+    raise FileNotFoundError(
+        f"Model not found: {model_path}. Run dqntrain.py first."
+    )
+
 results = []
 for env_id in ENV_IDS:
     env = DummyVecEnv([MakeEnv(env_id)])
     env = VecTransposeImage(env)
-    model_path = MODEL_ROOT / "best_model.zip"
-    if not model_path.exists():
-        raise FileNotFoundError(
-            f"Model not found: {model_path}. Run dqntrain.py first."
-        )
     model = DQN.load(model_path, env=env)
     result = evaluate_function(env=env, model=model, env_id=env_id)
     results.append(result)

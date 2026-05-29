@@ -100,6 +100,8 @@ def CurriculumLearning(env_list,policy_kwargs,timesteps_list):
                                      n_eval_episodes=20,verbose=1,deterministic=True)
         model.learn(total_timesteps=ttl_stps,callback=eval_callback,tb_log_name=f"PPO_{env_id}")
 
+        env.close()
+        eval_env.close()
 
 
 CurriculumLearning(env_list=env_list,policy_kwargs=policy_kwargs,timesteps_list=timesteps_list)

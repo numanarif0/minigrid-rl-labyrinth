@@ -64,15 +64,16 @@ env_ids = [
 
 MODEL_ROOT = Path("./best_model/ppo_runs_cf")
 
+model_path = MODEL_ROOT / "best_model.zip"
+if not model_path.exists():
+    raise FileNotFoundError(
+        f"Model not found: {model_path}. Run ppotrain.py first."
+    )
+
 results = []
 for env_id in env_ids:
     env = DummyVecEnv([MakeEnv(env_id)])
     env = VecTransposeImage(env)
-    model_path = MODEL_ROOT / "best_model.zip"
-    if not model_path.exists():
-        raise FileNotFoundError(
-            f"Model not found: {model_path}. Run ppotrain.py first."
-        )
     model = PPO.load(model_path, env=env)
     result = evaulateFunction(env=env, model=model, env_id=env_id)
     results.append(result)
