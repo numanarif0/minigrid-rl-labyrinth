@@ -1,3 +1,7 @@
+"""
+DQN V2 Evaluate — egitim + genelleme testi
+"""
+
 import gymnasium as gym
 import minigrid  # noqa: F401
 import numpy as np
@@ -79,13 +83,14 @@ UNSEEN_ENV_IDS = [
     "MiniGrid-SimpleCrossingS11N5-v0",
 ]
 
-MODEL_ROOT = Path("./best_model/dqn_runs_cf")
+MODEL_ROOT = Path("./best_model/dqn_runs_v2")
 model_path = MODEL_ROOT / "best_model.zip"
+
 if not model_path.exists():
-    raise FileNotFoundError(f"Model not found: {model_path}. Run dqntrain.py first.")
+    raise FileNotFoundError(f"Model bulunamadi: {model_path}. Once dqntrain_v2.py calistirin.")
 
 print("\n" + "=" * 60)
-print("EGITIM ORTAMLARI (DQN V1)")
+print("EGITIM ORTAMLARI (DQN V2)")
 print("=" * 60)
 train_results = []
 for env_id in TRAIN_ENV_IDS:
@@ -109,7 +114,7 @@ for env_id in UNSEEN_ENV_IDS:
     env.close()
 
 print("\n" + "=" * 60)
-print("OZET (DQN V1)")
+print("OZET (DQN V2)")
 print("=" * 60)
 print(f"\n{'--- Egitim Ortamlari ---'}")
 print(f"{'Env':<38} {'Success':>10} {'Reward':>20}")

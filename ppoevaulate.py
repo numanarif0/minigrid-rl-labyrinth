@@ -1,10 +1,23 @@
 import gymnasium as gym
-import minigrid
+import minigrid  # noqa: F401
 import numpy as np
 from pathlib import Path
 from stable_baselines3 import PPO
-from env_wrapper import MakeEnv
+from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecTransposeImage, DummyVecEnv
+from minigrid.wrappers import ImgObsWrapper
+
+from env_wrapper import MakeEnv, RewardWarapper
+
+
+def MakeEnvUnseen(env_id):
+    def _init():
+        env = gym.make(env_id)
+        env = RewardWarapper(env)
+        env = ImgObsWrapper(env)
+        env = Monitor(env)
+        return env
+    return _init
 
 
 def evaulateFunction(env, model, env_id, n_episodes=100):
@@ -25,13 +38,11 @@ def evaulateFunction(env, model, env_id, n_episodes=100):
             obs, reward, done, info = env.step(action)
             done = done[0]
             total_rewards += reward[0]
-
             if done:
                 is_success = info[0].get('is_success', False)
 
         if is_success:
             win += 1
-
         rewardsList.append(total_rewards)
         stepsList.append(step)
 
@@ -55,33 +66,57 @@ def evaulateFunction(env, model, env_id, n_episodes=100):
     }
 
 
-env_ids = [
+TRAIN_ENV_IDS = [
     "MiniGrid-LavaCrossingS9N1-v0",
     "MiniGrid-LavaCrossingS9N2-v0",
     "MiniGrid-LavaCrossingS9N3-v0",
     "MiniGrid-LavaCrossingS11N5-v0",
 ]
 
-MODEL_ROOT = Path("./best_model/ppo_runs_cf")
+UNSEEN_ENV_IDS = [
+    "MiniGrid-SimpleCrossingS9N1-v0",
+    "MiniGrid-SimpleCrossingS9N3-v0",
+    "MiniGrid-SimpleCrossingS11N5-v0",
+]
 
+MODEL_ROOT = Path("./best_model/ppo_runs_cf")
 model_path = MODEL_ROOT / "best_model.zip"
 if not model_path.exists():
-    raise FileNotFoundError(
-        f"Model not found: {model_path}. Run ppotrain.py first."
-    )
+    raise FileNotFoundError(f"Model not found: {model_path}. Run ppotrain.py first.")
 
-results = []
-for env_id in env_ids:
+print("\n" + "=" * 60)
+print("EGITIM ORTAMLARI (PPO V1)")
+print("=" * 60)
+train_results = []
+for env_id in TRAIN_ENV_IDS:
     env = DummyVecEnv([MakeEnv(env_id)])
     env = VecTransposeImage(env)
     model = PPO.load(model_path, env=env)
     result = evaulateFunction(env=env, model=model, env_id=env_id)
-    results.append(result)
+    train_results.append(result)
     env.close()
 
 print("\n" + "=" * 60)
-print("OZET")
+print("GENELLEME TESTI (Hic Egitilmemis Ortamlar)")
 print("=" * 60)
-print(f"{'Env':<35} {'Success':>10} {'Reward':>20}")
-for r in results:
-    print(f"{r['env_id']:<35} {r['success_rate']*100:>9.1f}% {r['mean_reward']:>10.3f} +/- {r['std_reward']:.3f}")
+unseen_results = []
+for env_id in UNSEEN_ENV_IDS:
+    env = DummyVecEnv([MakeEnvUnseen(env_id)])
+    env = VecTransposeImage(env)
+    model = PPO.load(model_path, env=env)
+    result = evaulateFunction(env=env, model=model, env_id=env_id)
+    unseen_results.append(result)
+    env.close()
+
+print("\n" + "=" * 60)
+print("OZET (PPO V1)")
+print("=" * 60)
+print(f"\n{'--- Egitim Ortamlari ---'}")
+print(f"{'Env':<38} {'Success':>10} {'Reward':>20}")
+for r in train_results:
+    print(f"{r['env_id']:<38} {r['success_rate']*100:>9.1f}% {r['mean_reward']:>10.3f} +/- {r['std_reward']:.3f}")
+
+print(f"\n{'--- Genelleme (Gorulmemis) ---'}")
+print(f"{'Env':<38} {'Success':>10} {'Reward':>20}")
+for r in unseen_results:
+    print(f"{r['env_id']:<38} {r['success_rate']*100:>9.1f}% {r['mean_reward']:>10.3f} +/- {r['std_reward']:.3f}")

@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE / Editor
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TensorBoard logs (büyük dosyalar, isteğe bağlı commit edilebilir)
+# Eğer commitlemek istersen aşağıdaki satırları kaldır
+*_tensorboard/
+*_tensorboard_v*/
+
+# Eğitim çıktıları
+*.log
+*_eval_results.txt
+_read_tb.py
+
+# LaTeX yan dosyaları
+*.aux
+*.out
+*.toc
+*.bbl
+*.blg
+*.synctex.gz

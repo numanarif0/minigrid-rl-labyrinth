@@ -1,8 +1,12 @@
+﻿"""
+PPO V2 Evaluate â€” egitim + genelleme testi
+"""
+
 import gymnasium as gym
 import minigrid  # noqa: F401
 import numpy as np
 from pathlib import Path
-from stable_baselines3 import DQN
+from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecTransposeImage, DummyVecEnv
 from minigrid.wrappers import ImgObsWrapper
@@ -20,9 +24,9 @@ def MakeEnvUnseen(env_id):
     return _init
 
 
-def evaluate_function(env, model, env_id, n_episodes=100):
-    rewards_list = []
-    steps_list = []
+def evaluateFunction(env, model, env_id, n_episodes=100):
+    rewardsList = []
+    stepsList = []
     win = 0
 
     for episode in range(n_episodes):
@@ -39,30 +43,30 @@ def evaluate_function(env, model, env_id, n_episodes=100):
             done = done[0]
             total_rewards += reward[0]
             if done:
-                is_success = info[0].get("is_success", False)
+                is_success = info[0].get('is_success', False)
 
         if is_success:
             win += 1
-        rewards_list.append(total_rewards)
-        steps_list.append(step)
+        rewardsList.append(total_rewards)
+        stepsList.append(step)
 
         status = "FINISH" if is_success else "FAIL"
         print(f"[{env_id}] Ep {episode+1:3d} | {status:6s} | Reward: {total_rewards:6.3f} | Steps: {step}")
 
     print(f"\n{'='*60}")
     print(f"Env: {env_id}")
-    print(f"  Mean Reward:  {np.mean(rewards_list):.3f} (+/- {np.std(rewards_list):.3f})")
-    print(f"  Mean Steps:   {np.mean(steps_list):.1f}")
-    print(f"  Max Reward:   {max(rewards_list):.3f}")
+    print(f"  Mean Reward:  {np.mean(rewardsList):.3f} (+/- {np.std(rewardsList):.3f})")
+    print(f"  Mean Steps:   {np.mean(stepsList):.1f}")
+    print(f"  Max Reward:   {max(rewardsList):.3f}")
     print(f"  Success Rate: {win}/{n_episodes} ({win*100/n_episodes:.1f}%)")
     print(f"{'='*60}\n")
 
     return {
         "env_id": env_id,
-        "mean_reward": np.mean(rewards_list),
-        "std_reward": np.std(rewards_list),
+        "mean_reward": np.mean(rewardsList),
+        "std_reward": np.std(rewardsList),
         "success_rate": win / n_episodes,
-        "mean_steps": np.mean(steps_list),
+        "mean_steps": np.mean(stepsList),
     }
 
 
@@ -79,37 +83,38 @@ UNSEEN_ENV_IDS = [
     "MiniGrid-SimpleCrossingS11N5-v0",
 ]
 
-MODEL_ROOT = Path("./best_model/dqn_runs_cf")
+MODEL_ROOT = Path("./best_model/ppo_runs_v2")
 model_path = MODEL_ROOT / "best_model.zip"
+
 if not model_path.exists():
-    raise FileNotFoundError(f"Model not found: {model_path}. Run dqntrain.py first.")
+    raise FileNotFoundError(f"Model bulunamadi: {model_path}. Once ppotrain_v2.py calistirin.")
 
 print("\n" + "=" * 60)
-print("EGITIM ORTAMLARI (DQN V1)")
+print("EGITIM ORTAMLARI")
 print("=" * 60)
 train_results = []
 for env_id in TRAIN_ENV_IDS:
     env = DummyVecEnv([MakeEnv(env_id)])
     env = VecTransposeImage(env)
-    model = DQN.load(model_path, env=env)
-    result = evaluate_function(env=env, model=model, env_id=env_id)
+    model = PPO.load(model_path, env=env)
+    result = evaluateFunction(env=env, model=model, env_id=env_id)
     train_results.append(result)
     env.close()
 
 print("\n" + "=" * 60)
-print("GENELLEME TESTI (Hic Egitilmemis Ortamlar)")
+print("GENELLEME TESTI (Hic Egitilmemis)")
 print("=" * 60)
 unseen_results = []
 for env_id in UNSEEN_ENV_IDS:
     env = DummyVecEnv([MakeEnvUnseen(env_id)])
     env = VecTransposeImage(env)
-    model = DQN.load(model_path, env=env)
-    result = evaluate_function(env=env, model=model, env_id=env_id)
+    model = PPO.load(model_path, env=env)
+    result = evaluateFunction(env=env, model=model, env_id=env_id)
     unseen_results.append(result)
     env.close()
 
 print("\n" + "=" * 60)
-print("OZET (DQN V1)")
+print("OZET (PPO V2)")
 print("=" * 60)
 print(f"\n{'--- Egitim Ortamlari ---'}")
 print(f"{'Env':<38} {'Success':>10} {'Reward':>20}")
