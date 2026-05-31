@@ -1,18 +1,4 @@
-﻿"""
-DQN V2 â€” Tek model, tÃ¼m ortamlar aynÄ± anda
-
-Ã–nceki yaklaÅŸÄ±mÄ±n sorunu:
-- Sequential curriculum: S11N5 eÄŸitimi S9N1/S9N2/S9N3'Ã¼ unutturuyor
-- Tek best_model.zip: son ortam kazanÄ±yor
-
-V3 Ã§Ã¶zÃ¼mÃ¼:
-- 4 ortam aynÄ± anda DummyVecEnv iÃ§inde â†’ replay buffer hepsini gÃ¶rÃ¼r
-- Catastrophic forgetting yok, tek genel model oluÅŸur
-- Orijinal env_wrapper (sadece BFS shaping, lava_penalty yok)
-- Tuned DQN hyperparametreler
-"""
-
-import minigrid  # noqa: F401
+﻿import minigrid  # noqa: F401
 import torch as th
 import torch.nn as nn
 from pathlib import Path
@@ -63,17 +49,16 @@ policy_kwargs = dict(
     normalize_images=False,
 )
 
-# 4 ortam: her biri 2'ÅŸer kopya â†’ toplam 8 ortam aynÄ± anda
-# (kolay ortamlar daha fazla temsil edilir, zor ortam da var)
+
 ENV_IDS = [
     "MiniGrid-LavaCrossingS9N1-v0",
-    "MiniGrid-LavaCrossingS9N1-v0",   # 2x â€” kolaydan baÅŸlamak iÃ§in
+    "MiniGrid-LavaCrossingS9N1-v0",   
     "MiniGrid-LavaCrossingS9N2-v0",
-    "MiniGrid-LavaCrossingS9N2-v0",   # 2x
+    "MiniGrid-LavaCrossingS9N2-v0",   
     "MiniGrid-LavaCrossingS9N3-v0",
-    "MiniGrid-LavaCrossingS9N3-v0",   # 2x
+    "MiniGrid-LavaCrossingS9N3-v0",   
     "MiniGrid-LavaCrossingS11N5-v0",
-    "MiniGrid-LavaCrossingS11N5-v0",  # 2x
+    "MiniGrid-LavaCrossingS11N5-v0",  
 ]
 
 # Eval iÃ§in tek kopya her ortamdan
@@ -91,11 +76,9 @@ MODEL_ROOT = Path("./best_model/dqn_runs_v2")
 def main():
     MODEL_ROOT.mkdir(parents=True, exist_ok=True)
 
-    # TÃ¼m ortamlar aynÄ± anda
     env = DummyVecEnv([MakeEnv(env_id=e) for e in ENV_IDS])
     env = VecTransposeImage(env)
 
-    # Eval: en zor ortamda deÄŸerlendir (S11N5 iyi giderse diÄŸerleri de gider)
     eval_env = DummyVecEnv([MakeEnv(env_id="MiniGrid-LavaCrossingS11N5-v0")])
     eval_env = VecTransposeImage(eval_env)
 
@@ -104,7 +87,7 @@ def main():
         policy_kwargs=policy_kwargs,
         env=env,
         learning_rate=1e-4,
-        buffer_size=200_000,       # BÃ¼yÃ¼k buffer: tÃ¼m ortamlardan deneyim saklansÄ±n
+        buffer_size=200_000,       
         learning_starts=10_000,
         batch_size=64,
         gamma=0.99,

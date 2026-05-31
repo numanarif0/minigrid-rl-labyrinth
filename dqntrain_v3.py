@@ -23,9 +23,7 @@ from env_wrapper import MakeEnv
 
 MODEL_ROOT = Path("./best_model/dqn_runs_v3")
 
-# S11N5 3x: zor ortama daha fazla maruz kal
-# S9N2, S9N3 2x: orta zorluk dengeli
-# S9N1 1x: cok kolaydi, az kopya yeterli
+
 TRAIN_ENV_IDS = [
     "MiniGrid-LavaCrossingS9N1-v0",
     "MiniGrid-LavaCrossingS9N2-v0",

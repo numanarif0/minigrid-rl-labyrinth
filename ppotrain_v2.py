@@ -1,11 +1,4 @@
-﻿"""
-PPO V2 â€” Tek model, tum ortamlar ayni anda (curriculum yok)
-
-V4 sorunu: curriculum ile single best_model.zip â†’ S11N5 son modeli S9N1'i unutuyor
-V2 cozumu: 8 env ayni anda â†’ her rollout tum seviyeleri goriyor â†’ unutma yok
-"""
-
-import minigrid  # noqa: F401
+﻿import minigrid  # noqa: F401
 import torch as th
 import torch.nn as nn
 from pathlib import Path

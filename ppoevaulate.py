@@ -1,23 +1,10 @@
-import gymnasium as gym
 import minigrid  # noqa: F401
 import numpy as np
 from pathlib import Path
 from stable_baselines3 import PPO
-from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecTransposeImage, DummyVecEnv
-from minigrid.wrappers import ImgObsWrapper
 
-from env_wrapper import MakeEnv, RewardWarapper
-
-
-def MakeEnvUnseen(env_id):
-    def _init():
-        env = gym.make(env_id)
-        env = RewardWarapper(env)
-        env = ImgObsWrapper(env)
-        env = Monitor(env)
-        return env
-    return _init
+from env_wrapper import MakeEnv
 
 
 def evaulateFunction(env, model, env_id, n_episodes=100):
@@ -101,7 +88,7 @@ print("GENELLEME TESTI (Hic Egitilmemis Ortamlar)")
 print("=" * 60)
 unseen_results = []
 for env_id in UNSEEN_ENV_IDS:
-    env = DummyVecEnv([MakeEnvUnseen(env_id)])
+    env = DummyVecEnv([MakeEnv(env_id)])
     env = VecTransposeImage(env)
     model = PPO.load(model_path, env=env)
     result = evaulateFunction(env=env, model=model, env_id=env_id)

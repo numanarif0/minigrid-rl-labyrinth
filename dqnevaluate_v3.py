@@ -1,27 +1,10 @@
-﻿"""
-DQN V3 Evaluate
-"""
-
-import gymnasium as gym
-import minigrid  # noqa: F401
+﻿import minigrid  
 import numpy as np
 from pathlib import Path
 from stable_baselines3 import DQN
-from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecTransposeImage, DummyVecEnv
-from minigrid.wrappers import ImgObsWrapper
 
-from env_wrapper import MakeEnv, RewardWarapper
-
-
-def MakeEnvUnseen(env_id):
-    def _init():
-        env = gym.make(env_id)
-        env = RewardWarapper(env)
-        env = ImgObsWrapper(env)
-        env = Monitor(env)
-        return env
-    return _init
+from env_wrapper import MakeEnv
 
 
 def evaluate_function(env, model, env_id, n_episodes=100):
@@ -89,7 +72,6 @@ model_path = MODEL_ROOT / "best_model.zip"
 if not model_path.exists():
     raise FileNotFoundError(f"Model bulunamadi: {model_path}. Once dqntrain_v3.py calistirin.")
 
-# --- Egitim ortamlari ---
 print("\n" + "=" * 60)
 print("EGITIM ORTAMLARI")
 print("=" * 60)
@@ -102,20 +84,18 @@ for env_id in TRAIN_ENV_IDS:
     train_results.append(result)
     env.close()
 
-# --- Gorulmemis ortamlar ---
 print("\n" + "=" * 60)
 print("GENELLEME TESTI (Hic Egitilmemis Ortamlar)")
 print("=" * 60)
 unseen_results = []
 for env_id in UNSEEN_ENV_IDS:
-    env = DummyVecEnv([MakeEnvUnseen(env_id)])
+    env = DummyVecEnv([MakeEnv(env_id)])
     env = VecTransposeImage(env)
     model = DQN.load(model_path, env=env)
     result = evaluate_function(env=env, model=model, env_id=env_id)
     unseen_results.append(result)
     env.close()
 
-# --- Ozet ---
 print("\n" + "=" * 60)
 print("OZET (DQN V3)")
 print("=" * 60)
