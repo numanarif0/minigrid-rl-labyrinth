@@ -15,7 +15,6 @@ env/
 # IDE / Editor
 .vscode/
 .idea/
-.claude/
 *.swp
 *.swo
 
@@ -33,10 +32,3 @@ Thumbs.db
 *_eval_results.txt
 _read_tb.py
 
-# LaTeX yan dosyaları
-*.aux
-*.out
-*.toc
-*.bbl
-*.blg
-*.synctex.gz
